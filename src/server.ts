@@ -117,7 +117,7 @@ export class Server {
       return;
     }
 
-    fnHandler(req, { logger: this.#options.logger, server: this })
+    fnHandler(req, { logger, server: this })
       .then((response) => {
         res.statusCode = 200;
 

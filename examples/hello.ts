@@ -1,10 +1,14 @@
+import { pino } from 'pino';
 import { NullLogger } from '../src/logger/logger.null.ts';
+import { PinoLogger } from '../src/logger/logger.pino.ts';
 import { success } from '../src/response.ts';
 import { server } from '../src/server.ts';
 
+const loggerInstance = pino();
+
 const app = server({
   port: 3000,
-  logger: new NullLogger(),
+  logger: new PinoLogger(loggerInstance),
   httpOptions: {
     keepAlive: true,
     keepAliveInitialDelay: 1000,

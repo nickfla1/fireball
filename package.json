@@ -14,7 +14,16 @@
     "@types/autocannon": "^7.12.6",
     "@types/node": "^22.12.0",
     "autocannon": "^8.0.0",
+    "pino": "^9.6.0",
     "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "pino": ">=9"
+  },
+  "peerDependenciesMeta": {
+    "pino": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=23.6.0"
