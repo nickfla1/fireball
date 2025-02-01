@@ -10,7 +10,12 @@ const app = server({
 });
 
 app.func('one', async () => {
-  return success({ message: 'hello world' });
+  return success({
+    message: 'hello world',
+    inner: {
+      foo: 'bar',
+    },
+  });
 });
 
 app.funcWithSchema(
