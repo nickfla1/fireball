@@ -33,26 +33,32 @@ export type FunctionHandler<
 ) => Promise<FunctionResponse<Data, Err>>;
 
 const COMMON_RESPONSES = {
-  METHOD_NOT_ALLOWED: serializeError(
-    fail({
-      code: 'method_not_allowed',
-      message: 'method not allowed',
-      additionalInfo: {},
-    }),
+  METHOD_NOT_ALLOWED: Buffer.from(
+    serializeError(
+      fail({
+        code: 'method_not_allowed',
+        message: 'method not allowed',
+        additionalInfo: {},
+      }),
+    ),
   ),
-  INVALID_REQUEST: serializeError(
-    fail({
-      code: 'invalid_request',
-      message: 'invalid request',
-      additionalInfo: {},
-    }),
+  INVALID_REQUEST: Buffer.from(
+    serializeError(
+      fail({
+        code: 'invalid_request',
+        message: 'invalid request',
+        additionalInfo: {},
+      }),
+    ),
   ),
-  FUNCTION_NOT_FOUND: serializeError(
-    fail({
-      code: 'function_not_found',
-      message: 'function not found',
-      additionalInfo: {},
-    }),
+  FUNCTION_NOT_FOUND: Buffer.from(
+    serializeError(
+      fail({
+        code: 'function_not_found',
+        message: 'function not found',
+        additionalInfo: {},
+      }),
+    ),
   ),
 };
 
@@ -79,7 +85,32 @@ export class Server {
     );
   }
 
-  handler(req: IncomingMessage, res: ServerResponse) {
+  async handler(req: IncomingMessage, res: ServerResponse) {
+    res.setHeader('Powered-By', 'Fireball');
+    res.setHeader('Content-Type', 'application/json');
+
+    if (req.method !== 'POST') {
+      res.statusCode = 405;
+      res.end(COMMON_RESPONSES.METHOD_NOT_ALLOWED);
+      return;
+    }
+
+    if (!req.url) {
+      res.statusCode = 400;
+      res.end(COMMON_RESPONSES.INVALID_REQUEST);
+      return;
+    }
+
+    const fnName = req.url;
+
+    const fnHandler = this.#functions[fnName];
+
+    if (!fnHandler) {
+      res.statusCode = 404;
+      res.end(COMMON_RESPONSES.FUNCTION_NOT_FOUND);
+      return;
+    }
+
     const logger = this.#options.logger.child('request');
     logger.setAdditionalData({
       url: req.url,
@@ -89,73 +120,39 @@ export class Server {
 
     logger.info('incoming request');
 
-    res.setHeader('Powered-By', 'Fireball');
-    res.setHeader('Content-Type', 'application/json');
+    try {
+      const result = await fnHandler(req, { logger, server: this });
+      res.statusCode = 200;
 
-    if (req.method !== 'POST') {
-      res.statusCode = 405;
-      res.write(COMMON_RESPONSES.METHOD_NOT_ALLOWED);
-      res.end();
-      return;
-    }
-
-    if (!req.url) {
-      res.statusCode = 400;
-      res.write(COMMON_RESPONSES.INVALID_REQUEST);
-      res.end();
-      return;
-    }
-
-    const fnName = req.url.split('/')[1] ?? '';
-
-    const fnHandler = this.#functions[fnName];
-
-    if (!fnHandler) {
-      res.statusCode = 404;
-      res.write(COMMON_RESPONSES.FUNCTION_NOT_FOUND);
-      res.end();
-      return;
-    }
-
-    fnHandler(req, { logger, server: this })
-      .then((response) => {
-        res.statusCode = 200;
-
-        if (!response.success) {
-          logger.warn('function execution was unsuccessful', {
-            response: response.error,
-          });
-
-          res.write(serializeError(response));
-        } else {
-          logger.info('function execution was successful', {
-            response: response.data,
-          });
-
-          const result =
-            this.#serializers[fnName]?.response?.(response) ??
-            JSON.stringify(response);
-
-          res.write(result);
-        }
-      })
-      .catch((error) => {
-        res.statusCode = 500;
-        res.write(
-          serializeError(
-            fail({
-              code: 'internal_error',
-              message: 'unexpected error',
-              additionalInfo: { error },
-            }),
-          ),
-        );
-
-        logger.error('function execution resulted in an unhandled exception', {
-          error,
+      if (!result.success) {
+        logger.warn('function execution was unsuccessful', {
+          response: result.error,
         });
-      })
-      .finally(() => res.end());
+
+        res.end(serializeError(result));
+      } else {
+        const serialized =
+          this.#serializers[fnName]?.response?.(result) ??
+          JSON.stringify(result);
+
+        res.end(serialized);
+      }
+    } catch (error) {
+      res.statusCode = 500;
+      res.write(
+        serializeError(
+          fail({
+            code: 'internal_error',
+            message: 'unexpected error',
+            additionalInfo: { error },
+          }),
+        ),
+      );
+
+      logger.error('function execution resulted in an unhandled exception', {
+        error,
+      });
+    }
   }
 
   requestId() {
@@ -178,7 +175,7 @@ export class Server {
   }
 
   func(name: string, handler: FunctionHandler) {
-    this.#functions[name] = handler;
+    this.#functions[name.split('/')[1] ?? ''] = handler;
   }
 
   funcWithSchema(
@@ -189,10 +186,12 @@ export class Server {
     const successSchema = createSuccessSchema(schema.response);
     const successSchemaStringify = createSuccessStringify(successSchema);
 
-    this.#serializers[name] = {
+    const key = name.split('/')[1] ?? '';
+
+    this.#serializers[key] = {
       response: successSchemaStringify,
     };
-    this.#functions[name] = handler;
+    this.#functions[key] = handler;
   }
 
   async closeAsync() {
