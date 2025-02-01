@@ -10,6 +10,7 @@ on:
       - "**.js"
       - "**.json"
       - "yarn.lock"
+      - ".github/workflows/bench.yaml"
 
 concurrency:
   group: "${{ github.workflow }}"
