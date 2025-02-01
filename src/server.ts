@@ -64,7 +64,7 @@ interface FunctionSerializer {
   response: (data: unknown) => string;
 }
 
-class Server {
+export class Server {
   #options: ServerOptions;
   #server: http.Server;
 
