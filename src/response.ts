@@ -1,4 +1,7 @@
-import fastJson from 'fast-json-stringify';
+import fastJson, {
+  type AnySchema,
+  type ObjectSchema,
+} from 'fast-json-stringify';
 
 export interface FunctionError<AdditionInfo extends object = object> {
   code: string;
@@ -24,15 +27,52 @@ export type FunctionResponse<
   Err extends FunctionError = FunctionError,
 > = FunctionResponseSuccess<Data> | FunctionResponseError<Err>;
 
-const stringifySuccess = fastJson({
-  title: 'Success response schema',
-  type: 'object',
-  properties: {
-    success: { type: 'boolean' },
-    data: { type: 'object' },
-  },
-  required: ['success', 'data'],
-});
+export function createSuccessSchema<Data extends ObjectSchema>(data: Data) {
+  return {
+    title: 'Success response schema',
+    type: 'object',
+    properties: {
+      success: { type: 'boolean' },
+      data,
+    },
+    required: ['success', 'data'],
+  } satisfies ObjectSchema;
+}
+
+export function createErrorSchema<ErrInfo extends ObjectSchema>(
+  additionalInfo: ErrInfo,
+) {
+  return {
+    title: 'Error response schema',
+    type: 'object',
+    properties: {
+      success: { type: 'boolean' },
+      error: {
+        type: 'object',
+        properties: {
+          code: { type: 'string' },
+          message: { type: 'string' },
+          additionalInfo,
+        },
+        required: ['code', 'message'],
+      },
+    },
+  } satisfies ObjectSchema;
+}
+
+export function createSuccessStringify<
+  Data extends ObjectSchema,
+  Schema extends ReturnType<typeof createSuccessSchema<Data>>,
+>(schema: Schema) {
+  return fastJson(schema);
+}
+
+export function createErrorStringify<
+  ErrInfo extends ObjectSchema,
+  Schema extends ReturnType<typeof createErrorSchema<ErrInfo>>,
+>(schema: Schema) {
+  return fastJson(schema);
+}
 
 const stringifyError = fastJson({
   title: 'Error response schema',
@@ -44,17 +84,13 @@ const stringifyError = fastJson({
       properties: {
         code: { type: 'string' },
         message: { type: 'string' },
-        additionalInfo: { type: 'object' },
+        additionalInfo: { type: 'null' },
       },
       required: ['code', 'message'],
     },
   },
   required: ['success', 'error'],
 });
-
-export function serializeSuccess(res: FunctionResponseSuccess): string {
-  return stringifySuccess(res);
-}
 
 export function serializeError(
   res: FunctionResponseError<FunctionError<object>>,
@@ -65,21 +101,17 @@ export function serializeError(
 export function success<Data extends object>(
   data: Data,
 ): FunctionResponseSuccess<Data> {
-  const res = Object.create(null, {
-    success: { value: true },
-    data: { value: data },
+  return Object.create(null, {
+    success: { value: true, enumerable: true },
+    data: { value: data, enumerable: true },
   });
-
-  return res;
 }
 
 export function fail<Err extends FunctionError>(
   error: Err,
 ): FunctionResponseError<Err> {
-  const res = Object.create(null, {
-    success: { value: false },
-    error: { value: error },
+  return Object.create(null, {
+    success: { value: false, enumerable: true },
+    error: { value: error, enumerable: true },
   });
-
-  return res;
 }

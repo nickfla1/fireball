@@ -18,4 +18,21 @@ app.func('hello', async (_req, { logger }) => {
   return success({ message: 'hello world' });
 });
 
+app.funcWithSchema(
+  'hi',
+  {
+    response: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+      },
+    },
+  },
+  async (_req, { logger }) => {
+    logger.info('hello from function');
+
+    return success({ message: 'hello world' });
+  },
+);
+
 app.listen();

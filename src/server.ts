@@ -1,13 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
+import type { ObjectSchema, Schema, build } from 'fast-json-stringify';
 import { ConsoleLogger } from './logger/logger.console.ts';
 import type { LoggerBase } from './logger/logger.ts';
 import {
   type FunctionError,
   type FunctionResponse,
+  createSuccessSchema,
+  createSuccessStringify,
   fail,
   serializeError,
-  serializeSuccess,
 } from './response.ts';
 
 export interface ServerOptions {
@@ -54,11 +56,20 @@ const COMMON_RESPONSES = {
   ),
 };
 
+interface FunctionSchema {
+  response: ObjectSchema;
+}
+
+interface FunctionSerializer {
+  response: (data: unknown) => string;
+}
+
 class Server {
   #options: ServerOptions;
   #server: http.Server;
 
   #functions: Record<string, FunctionHandler> = {};
+  #serializers: Record<string, FunctionSerializer> = {};
 
   constructor(options: ServerOptions) {
     this.#options = options;
@@ -121,7 +132,11 @@ class Server {
             response: response.data,
           });
 
-          res.write(serializeSuccess(response));
+          const result =
+            this.#serializers[fnName]?.response?.(response) ??
+            JSON.stringify(response);
+
+          res.write(result);
         }
       })
       .catch((error) => {
@@ -163,6 +178,20 @@ class Server {
   }
 
   func(name: string, handler: FunctionHandler) {
+    this.#functions[name] = handler;
+  }
+
+  funcWithSchema(
+    name: string,
+    schema: FunctionSchema,
+    handler: FunctionHandler,
+  ) {
+    const successSchema = createSuccessSchema(schema.response);
+    const successSchemaStringify = createSuccessStringify(successSchema);
+
+    this.#serializers[name] = {
+      response: successSchemaStringify,
+    };
     this.#functions[name] = handler;
   }
 
