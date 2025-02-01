@@ -58,24 +58,6 @@ const benchs: {
     info: 'with schema',
     httpOptions: {},
   },
-  {
-    path: '/one',
-    info: 'no schema - keep alive',
-    httpOptions: {
-      keepAlive: true,
-      keepAliveInitialDelay: 1000,
-      keepAliveTimeout: 5000,
-    },
-  },
-  {
-    path: '/two',
-    info: 'with schema - keep alive',
-    httpOptions: {
-      keepAlive: true,
-      keepAliveInitialDelay: 1000,
-      keepAliveTimeout: 5000,
-    },
-  },
 ];
 
 const benchResults = [];
@@ -113,7 +95,7 @@ for (const bench of benchs) {
 
 console.table(benchResults, [
   'path',
-  'schema',
+  'info',
   'average',
   'mean',
   'stddev',
