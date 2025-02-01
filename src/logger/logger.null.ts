@@ -1,15 +1,15 @@
 import type { LoggerBase } from './logger.ts';
 
 export class NullLogger implements LoggerBase {
-  setAdditionalData(data: object) {}
+  setAdditionalData(_data: object) {}
 
-  child(name: string) {
+  child(_name: string) {
     return this;
   }
 
-  info(message: string, data?: object) {}
-  warn(message: string, data?: object) {}
-  error(message: string, data?: object) {}
-  debug(message: string, data?: object) {}
-  trace(message: string, data?: object) {}
+  info(_message: string, _data?: object) {}
+  warn(_message: string, _data?: object) {}
+  error(_message: string, _data?: object) {}
+  debug(_message: string, _data?: object) {}
+  trace(_message: string, _data?: object) {}
 }

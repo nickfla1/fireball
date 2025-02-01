@@ -1,5 +1,4 @@
 import { pino } from 'pino';
-import { NullLogger } from '../src/logger/logger.null.ts';
 import { PinoLogger } from '../src/logger/logger.pino.ts';
 import { success } from '../src/response.ts';
 import { server } from '../src/server.ts';

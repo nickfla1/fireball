@@ -1,7 +1,4 @@
-import fastJson, {
-  type AnySchema,
-  type ObjectSchema,
-} from 'fast-json-stringify';
+import fastJson, { type ObjectSchema } from 'fast-json-stringify';
 
 export interface FunctionError<AdditionInfo extends object = object> {
   code: string;

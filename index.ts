@@ -1,1 +1,3 @@
-export { server } from './src/server.ts';
+import { server } from './src/server.ts';
+
+export { server };
