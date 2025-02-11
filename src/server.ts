@@ -186,7 +186,7 @@ export class Server {
     const successSchema = createSuccessSchema(schema.response);
     const successSchemaStringify = createSuccessStringify(successSchema);
 
-    const key = name.split('/')[1] ?? '';
+    const key = `/${name}`;
 
     this.#serializers[key] = {
       response: successSchemaStringify,
