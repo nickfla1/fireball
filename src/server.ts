@@ -121,11 +121,15 @@ export class Server {
 
     const { handler: fnHandler, serializer: fnSerializer } = entry;
 
+    const requestId = this.requestId;
+
     const logger = this.#options.logger.child('request');
     logger.setAdditionalData({
       url: req.url,
       method: req.method,
-      requestId: this.requestId(),
+      get requestId() {
+        return requestId();
+      },
     });
 
     logger.info('incoming request');

@@ -98,17 +98,17 @@ export function serializeError(
 export function success<Data extends object>(
   data: Data,
 ): FunctionResponseSuccess<Data> {
-  return Object.create(null, {
-    success: { value: true, enumerable: true },
-    data: { value: data, enumerable: true },
-  });
+  return {
+    success: true,
+    data,
+  };
 }
 
 export function fail<Err extends FunctionError>(
   error: Err,
 ): FunctionResponseError<Err> {
-  return Object.create(null, {
-    success: { value: false, enumerable: true },
-    error: { value: error, enumerable: true },
-  });
+  return {
+    success: false,
+    error,
+  };
 }
