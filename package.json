@@ -1,6 +1,6 @@
 {
   "name": "fireball",
-  "packageManager": "yarn@4.6.0",
+  "packageManager": "yarn@4.10.3",
   "type": "module",
   "scripts": {
     "types": "tsc",
@@ -10,15 +10,15 @@
   },
   "main": "index.ts",
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
-    "@types/autocannon": "^7.12.6",
-    "@types/node": "^22.12.0",
+    "@biomejs/biome": "^2.3.0",
+    "@types/autocannon": "^7.12.7",
+    "@types/node": "^24.9.1",
     "autocannon": "^8.0.0",
-    "pino": "^9.6.0",
-    "typescript": "^5.7.3"
+    "pino": "^10.1.0",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "pino": ">=9"
+    "pino": ">=10"
   },
   "peerDependenciesMeta": {
     "pino": {
@@ -26,9 +26,9 @@
     }
   },
   "engines": {
-    "node": ">=23.6.0"
+    "node": ">=24"
   },
   "dependencies": {
-    "fast-json-stringify": "^6.0.1"
+    "fast-json-stringify": "^6.1.1"
   }
 }
