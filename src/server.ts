@@ -4,10 +4,10 @@ import type { ObjectSchema } from 'fast-json-stringify';
 import { ConsoleLogger } from './logger/logger.console.ts';
 import type { LoggerBase } from './logger/logger.ts';
 import {
-  type FunctionError,
-  type FunctionResponse,
   createSuccessSchema,
   createSuccessStringify,
+  type FunctionError,
+  type FunctionResponse,
   fail,
   serializeError,
 } from './response.ts';
@@ -31,6 +31,11 @@ export type FunctionHandler<
   req: IncomingMessage,
   config: FunctionHandlerConfig,
 ) => Promise<FunctionResponse<Data, Err>>;
+
+interface FunctionEntry {
+  handler: FunctionHandler;
+  serializer: FunctionSerializer;
+}
 
 const COMMON_RESPONSES = {
   METHOD_NOT_ALLOWED: Buffer.from(
@@ -70,12 +75,15 @@ interface FunctionSerializer {
   response: (data: unknown) => string;
 }
 
+const NoOpSerializer: FunctionSerializer = {
+  response: (data) => JSON.stringify(data),
+};
+
 export class Server {
   #options: ServerOptions;
   #server: http.Server;
 
-  #functions: Record<string, FunctionHandler> = {};
-  #serializers: Record<string, FunctionSerializer> = {};
+  #functions: Record<string, FunctionEntry> = {};
 
   constructor(options: ServerOptions) {
     this.#options = options;
@@ -103,13 +111,15 @@ export class Server {
 
     const fnName = req.url;
 
-    const fnHandler = this.#functions[fnName];
+    const entry = this.#functions[fnName];
 
-    if (!fnHandler) {
+    if (!entry) {
       res.statusCode = 404;
       res.end(COMMON_RESPONSES.FUNCTION_NOT_FOUND);
       return;
     }
+
+    const { handler: fnHandler, serializer: fnSerializer } = entry;
 
     const logger = this.#options.logger.child('request');
     logger.setAdditionalData({
@@ -131,9 +141,8 @@ export class Server {
 
         res.end(serializeError(result));
       } else {
-        const serialized =
-          this.#serializers[fnName]?.response?.(result) ??
-          JSON.stringify(result);
+        // we always add an empty serializer
+        const serialized = fnSerializer.response(result);
 
         res.end(serialized);
       }
@@ -175,7 +184,12 @@ export class Server {
   }
 
   func(name: string, handler: FunctionHandler) {
-    this.#functions[name.split('/')[1] ?? ''] = handler;
+    const key = name.split('/')[1] ?? '';
+
+    this.#functions[key] = {
+      handler,
+      serializer: NoOpSerializer,
+    };
   }
 
   funcWithSchema(
@@ -188,10 +202,12 @@ export class Server {
 
     const key = `/${name}`;
 
-    this.#serializers[key] = {
-      response: successSchemaStringify,
+    this.#functions[key] = {
+      handler,
+      serializer: {
+        response: successSchemaStringify,
+      },
     };
-    this.#functions[key] = handler;
   }
 
   async closeAsync() {

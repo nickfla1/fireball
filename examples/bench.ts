@@ -1,6 +1,5 @@
-import autocannon from 'autocannon';
-
 import type { ServerOptions } from 'node:http';
+import autocannon from 'autocannon';
 import { NullLogger } from '../src/logger/logger.null.ts';
 import { success } from '../src/response.ts';
 import { type Server, server } from '../src/server.ts';
@@ -74,8 +73,9 @@ for (const bench of benchs) {
   registerFunctions(app);
   app.listen();
 
+  const url = `http://localhost:3000/${bench.path}`;
   const results = await autocannon({
-    url: `http://localhost:3000/${bench.path}`,
+    url,
     method: 'POST',
     connections: 100,
     duration: 40,
