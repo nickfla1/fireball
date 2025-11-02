@@ -13,3 +13,5 @@
 .pnp.*
 
 .clinic
+
+node_modules
